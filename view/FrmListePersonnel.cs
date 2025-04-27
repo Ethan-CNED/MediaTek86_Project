@@ -16,5 +16,10 @@ namespace Kanban.view
         {
             InitializeComponent();
         }
+
+        private void FrmListePersonnel_Load(object sender, EventArgs e)
+        {
+
+        }
     }
 }
