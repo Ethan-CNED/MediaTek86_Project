@@ -1,12 +1,21 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
+using Kanban.dal;
 
 namespace Kanban.controller
 {
-    internal class FrmAbsenceController
+    /// <summary>
+    /// Contrôleur pour gérer les opérations liées aux absences.
+    /// </summary>
+    public static class FrmAbsenceController
     {
+        /// <summary>
+        /// Récupère la liste de toutes les absences depuis la base de données.
+        /// </summary>
+        /// <returns>Liste des informations des absences.</returns>
+        public static List<object[]> GetAllAbsences()
+        {
+            return AbsenceAccess.GetAllAbsences();
+        }
     }
 }
+
