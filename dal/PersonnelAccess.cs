@@ -136,6 +136,17 @@ namespace Kanban.dal
             // Exécuter la requête
             BddManager.GetInstance().ReqUpdate(query, parameters);
         }
+
+        public static int DeletePersonnel(int idPersonnel)
+        {
+            string query = "DELETE FROM personnel WHERE idpersonnel = @idPersonnel";
+            Dictionary<string, object> parameters = new Dictionary<string, object>
+    {
+        { "@idPersonnel", idPersonnel }
+    };
+            return BddManager.GetInstance().ReqUpdate(query, parameters);
+        }
+
     }
 }
 

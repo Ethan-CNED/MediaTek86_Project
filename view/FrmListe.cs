@@ -136,5 +136,95 @@ namespace Kanban.view
                 LoadAbsences(); 
             }
         }
+
+        private void btn_Perso_Supprimer_Click(object sender, EventArgs e)
+        {
+            if (dataGridView_Personnel.SelectedRows.Count > 0)
+            {
+                int idPersonnel = Convert.ToInt32(dataGridView_Personnel.SelectedRows[0].Cells[0].Value);
+
+                DialogResult dr = MessageBox.Show(
+                    "Voulez-vous vraiment supprimer ce personnel et toutes ses absences associées ?",
+                    "Confirmation",
+                    MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Warning);
+
+                if (dr == DialogResult.Yes)
+                {
+                    // Suppression des absences liées
+                    int rowsAbs = AbsenceAccess.DeleteAbsencesByPersonnel(idPersonnel);
+                    // Suppression du personnel
+                    int rowsPerso = PersonnelAccess.DeletePersonnel(idPersonnel);
+
+                    if (rowsPerso > 0)
+                    {
+                        MessageBox.Show("Personnel et ses absences supprimés avec succès.",
+                                        "Succès", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        // Rafraîchir la liste
+                        RefreshPersonnelGrid();
+                    }
+                    else
+                    {
+                        MessageBox.Show("La suppression du personnel a échoué.",
+                                        "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                }
+            }
+            else
+            {
+                MessageBox.Show("Veuillez sélectionner un personnel à supprimer.",
+                                "Information", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+        }
+
+        private void RefreshPersonnelGrid()
+        {
+            // Par exemple, réaffectation de la source de données :
+            var personnels = PersonnelAccess.GetAllPersonnels();
+            dataGridView_Personnel.DataSource = null;
+            dataGridView_Personnel.DataSource = personnels;
+        }
+
+
+
+
+
+        private void btn_Abs_Supprimer_Click(object sender, EventArgs e)
+        {
+            if (dataGridView_Absence.SelectedRows.Count > 0)
+            {
+                Absence selectedAbsence = dataGridView_Absence.SelectedRows[0].DataBoundItem as Absence;
+                if (selectedAbsence != null)
+                {
+                    DialogResult dr = MessageBox.Show("Voulez-vous vraiment supprimer cette absence ?",
+                                                        "Confirmation", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+                    if (dr == DialogResult.Yes)
+                    {
+                        int rows = AbsenceAccess.DeleteAbsence(selectedAbsence);
+                        if (rows > 0)
+                        {
+                            MessageBox.Show("Absence supprimée avec succès.", "Succès", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                            RefreshAbsenceGrid();
+                        }
+                        else
+                        {
+                            MessageBox.Show("La suppression de l'absence a échoué.", "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        }
+                    }
+                }
+            }
+            else
+            {
+                MessageBox.Show("Veuillez sélectionner une absence à supprimer.", "Information", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+        }
+
+        private void RefreshAbsenceGrid()
+        {
+            var absences = AbsenceAccess.GetAllAbsences();
+            dataGridView_Absence.DataSource = null;
+            dataGridView_Absence.DataSource = absences;
+        }
+
     }
 }

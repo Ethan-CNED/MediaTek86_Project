@@ -51,6 +51,8 @@ namespace Kanban.view
             this.tabPage2 = new System.Windows.Forms.TabPage();
             this.button_Abs_Ajoutez = new System.Windows.Forms.Button();
             this.button_Abs_Modifier = new System.Windows.Forms.Button();
+            this.btn_Perso_Supprimer = new System.Windows.Forms.Button();
+            this.btn_Abs_Supprimer = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView_Personnel)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView_Absence)).BeginInit();
             this.tabControl1.SuspendLayout();
@@ -88,6 +90,7 @@ namespace Kanban.view
             // 
             // tabPage1
             // 
+            this.tabPage1.Controls.Add(this.btn_Perso_Supprimer);
             this.tabPage1.Controls.Add(this.dataGridView_Personnel);
             this.tabPage1.Controls.Add(this.btn_Perso_Ajoutez);
             this.tabPage1.Controls.Add(this.btn_Perso_Modifier);
@@ -117,6 +120,7 @@ namespace Kanban.view
             // 
             // tabPage2
             // 
+            this.tabPage2.Controls.Add(this.btn_Abs_Supprimer);
             this.tabPage2.Controls.Add(this.dataGridView_Absence);
             this.tabPage2.Controls.Add(this.button_Abs_Ajoutez);
             this.tabPage2.Controls.Add(this.button_Abs_Modifier);
@@ -143,6 +147,24 @@ namespace Kanban.view
             this.button_Abs_Modifier.TabIndex = 2;
             this.button_Abs_Modifier.Text = "Modifier";
             this.button_Abs_Modifier.Click += new System.EventHandler(this.btn_Abs_Modifier_Click);
+            // 
+            // btn_Perso_Supprimer
+            // 
+            this.btn_Perso_Supprimer.Location = new System.Drawing.Point(229, 431);
+            this.btn_Perso_Supprimer.Name = "btn_Perso_Supprimer";
+            this.btn_Perso_Supprimer.Size = new System.Drawing.Size(97, 31);
+            this.btn_Perso_Supprimer.TabIndex = 3;
+            this.btn_Perso_Supprimer.Text = "Supprimer";
+            this.btn_Perso_Supprimer.Click += new System.EventHandler(this.btn_Perso_Supprimer_Click);
+            // 
+            // btn_Abs_Supprimer
+            // 
+            this.btn_Abs_Supprimer.Location = new System.Drawing.Point(229, 431);
+            this.btn_Abs_Supprimer.Name = "btn_Abs_Supprimer";
+            this.btn_Abs_Supprimer.Size = new System.Drawing.Size(97, 31);
+            this.btn_Abs_Supprimer.TabIndex = 3;
+            this.btn_Abs_Supprimer.Text = "Supprimer";
+            this.btn_Abs_Supprimer.Click += new System.EventHandler(this.btn_Abs_Supprimer_Click);
             // 
             // FrmListe
             // 
@@ -340,5 +362,8 @@ namespace Kanban.view
                 MessageBox.Show($"Erreur lors du chargement des absences : {ex.Message}", "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
+
+        private Button btn_Perso_Supprimer;
+        private Button btn_Abs_Supprimer;
     }
 }

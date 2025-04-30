@@ -175,5 +175,36 @@ namespace Kanban.dal
             int rowsAffected = BddManager.GetInstance().ReqUpdate(query, parameters);
             return rowsAffected;
         }
+
+        public static int DeleteAbsence(Absence absence)
+        {
+            string query = @"DELETE FROM absence 
+                     WHERE idpersonnel = @idPersonnel 
+                       AND datedebut = @dateDebut 
+                       AND datefin = @dateFin 
+                       AND idMotif = @idMotif";
+
+            Dictionary<string, object> parameters = new Dictionary<string, object>
+    {
+        { "@idPersonnel", absence.idPersonnel },
+        { "@dateDebut", absence.dateDebut.ToString("yyyy-MM-dd HH:mm:ss") },
+        { "@dateFin", absence.dateFin.ToString("yyyy-MM-dd HH:mm:ss") },
+        { "@idMotif", absence.idMotif }
+    };
+
+            return BddManager.GetInstance().ReqUpdate(query, parameters);
+        }
+
+        public static int DeleteAbsencesByPersonnel(int idPersonnel)
+        {
+            string query = "DELETE FROM absence WHERE idpersonnel = @idPersonnel";
+            Dictionary<string, object> parameters = new Dictionary<string, object>
+    {
+        { "@idPersonnel", idPersonnel }
+    };
+            return BddManager.GetInstance().ReqUpdate(query, parameters);
+        }
+
+
     }
 }
