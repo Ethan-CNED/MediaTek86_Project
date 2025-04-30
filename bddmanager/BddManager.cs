@@ -1,126 +1,156 @@
 ﻿using MySql.Data.MySqlClient;
 using System;
 using System.Collections.Generic;
-using System.Data.SqlClient;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Globalization;
 
 namespace Kanban.bddmanager
 {
-    /// <summary>
-    /// Singleton : gestion de la connexion à la base de données et exécution des requêtes SQL.
-    /// </summary>
     public class BddManager
     {
-        /// <summary>
-        /// Instance unique de la classe BddManager.
-        /// </summary>
         private static BddManager instance = null;
 
-        /// <summary>
-        /// Objet de connexion MySQL.
-        /// </summary>
+        private static readonly string stringConnect = "server=localhost;userid=Mediatek86_Admin;password=GEd(E[*-zmK9w6W7;database=mediatek86_db;Allow Zero Datetime=True;Convert Zero Datetime=True;";
+
         private readonly MySqlConnection connection;
 
-        /// <summary>
-        /// Constructeur pour créer la connexion à la base de données et l'ouvrir.
-        /// </summary>
-        /// <param name="stringConnect">Chaîne de connexion à la base de données.</param>
-        private BddManager(string stringConnect)
+        private BddManager()
         {
             connection = new MySqlConnection(stringConnect);
             connection.Open();
         }
 
-        /// <summary>
-        /// Obtient ou crée l'unique instance de la classe BddManager.
-        /// </summary>
-        /// <param name="stringConnect">Chaîne de connexion à la base de données.</param>
-        /// <returns>L'instance unique de la classe BddManager.</returns>
-        public static BddManager GetInstance(string stringConnect)
+        public static BddManager GetInstance()
         {
             if (instance == null)
             {
-                instance = new BddManager(stringConnect);
+                instance = new BddManager();
             }
             return instance;
         }
 
-        /// <summary>
-        /// Exécute une requête SQL de type "UPDATE", "INSERT", ou "DELETE".
-        /// </summary>
-        /// <param name="stringQuery">Requête SQL à exécuter.</param>
-        /// <param name="parameters">Paramètres de la requête SQL.</param>
         public void ReqUpdate(string stringQuery, Dictionary<string, object> parameters = null)
         {
-            MySqlCommand command = new MySqlCommand(stringQuery, connection);
-            if (parameters != null)
+            using (MySqlCommand command = new MySqlCommand(stringQuery, connection))
             {
-                foreach (KeyValuePair<string, object> parameter in parameters)
+                if (parameters != null)
                 {
-                    command.Parameters.Add(new MySqlParameter(parameter.Key, parameter.Value));
+                    foreach (KeyValuePair<string, object> parameter in parameters)
+                    {
+                        command.Parameters.Add(new MySqlParameter(parameter.Key, parameter.Value));
+                    }
                 }
+                command.Prepare();
+                command.ExecuteNonQuery();
             }
-            command.Prepare();
-            command.ExecuteNonQuery();
         }
 
-        /// <summary>
-        /// Exécute une requête SQL de type "SELECT" et retourne une liste de résultats.
-        /// </summary>
-        /// <param name="stringQuery">Requête SQL à exécuter.</param>
-        /// <param name="parameters">Paramètres de la requête SQL.</param>
-        /// <returns>Liste des résultats sous forme de tableaux d'objets.</returns>
-        public List<object[]> ReqSelect(string stringQuery, Dictionary<string, object> parameters = null)
+        public List<object[]> ReqSelect(string query)
         {
-            List<object[]> records = new List<object[]>();
-            MySqlCommand command = new MySqlCommand(stringQuery, connection);
+            var results = new List<object[]>();
 
-            if (parameters != null)
+            // Création d'une connexion locale pour la requête SELECT
+            using (var conn = new MySqlConnection(stringConnect))
             {
-                foreach (KeyValuePair<string, object> parameter in parameters)
+                conn.Open();
+                using (var command = new MySqlCommand(query, conn))
                 {
-                    command.Parameters.Add(new MySqlParameter(parameter.Key, parameter.Value));
+                    using (var reader = command.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            var row = new object[reader.FieldCount];
+                            reader.GetValues(row);
+                            results.Add(row);
+                        }
+                    }
                 }
             }
 
-            command.Prepare();
-            using (MySqlDataReader reader = command.ExecuteReader())
-            {
-                int nbCols = reader.FieldCount;
-                while (reader.Read())
-                {
-                    object[] attributs = new object[nbCols];
-                    reader.GetValues(attributs);
-                    records.Add(attributs);
-                }
-            }
-            return records;
+            return results;
         }
 
-        /// <summary>
-        /// Exécute une requête SQL de type "SELECT" et retourne une valeur unique.
-        /// </summary>
-        /// <param name="stringQuery">Requête SQL à exécuter.</param>
-        /// <param name="parameters">Paramètres de la requête SQL.</param>
-        /// <returns>Valeur unique retournée par la requête SQL.</returns>
         public object ReqSelectScalar(string stringQuery, Dictionary<string, object> parameters = null)
         {
-            object result = null;
-            MySqlCommand command = new MySqlCommand(stringQuery, connection);
-
-            if (parameters != null)
+            using (MySqlCommand command = new MySqlCommand(stringQuery, connection))
             {
-                foreach (KeyValuePair<string, object> parameter in parameters)
+                if (parameters != null)
                 {
-                    command.Parameters.Add(new MySqlParameter(parameter.Key, parameter.Value));
+                    foreach (KeyValuePair<string, object> parameter in parameters)
+                    {
+                        command.Parameters.Add(new MySqlParameter(parameter.Key, parameter.Value));
+                    }
+                }
+                command.Prepare();
+                object result = command.ExecuteScalar();
+                return result;
+            }
+        }
+
+        /// <summary>
+        /// Méthode modifiée pour récupérer le nom du personnel via une jointure.
+        /// </summary>
+        /// <returns>Liste des absences sous forme de tableaux d'objets.</returns>
+        public static List<object[]> GetAllAbsences()
+        {
+            // Remarquez l'utilisation de backticks pour encapsuler les noms de tables/colonnes.
+            string query = @"
+                SELECT p.nom AS Personnel, a.datedebut, a.datefin, a.idMotif 
+                FROM `absence` a 
+                INNER JOIN `personnel` p ON a.idPersonnel = p.id";
+
+            var results = BddManager.GetInstance().ReqSelect(query);
+            var absences = new List<object[]>();
+
+            // Formats attendus pour la conversion des dates.
+            string[] formats = { "yyyy-MM-dd HH:mm:ss", "MM/dd/yyyy HH:mm:ss", "dd/MM/yyyy HH:mm:ss" };
+
+            foreach (var row in results)
+            {
+                try
+                {
+                    DateTime dateDebut = DateTime.MinValue;
+                    DateTime dateFin = DateTime.MinValue;
+
+                    if (row[1] != DBNull.Value)
+                    {
+                        string dateDebutStr = row[1].ToString();
+                        if (!DateTime.TryParseExact(dateDebutStr, formats, CultureInfo.InvariantCulture,
+                                                      DateTimeStyles.AllowWhiteSpaces | DateTimeStyles.AssumeLocal,
+                                                      out dateDebut))
+                        {
+                            Console.WriteLine($"Date début invalide : {row[1]}");
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine($"Date début invalide : {row[1]}");
+                    }
+
+                    if (row[2] != DBNull.Value)
+                    {
+                        string dateFinStr = row[2].ToString();
+                        if (!DateTime.TryParseExact(dateFinStr, formats, CultureInfo.InvariantCulture,
+                                                      DateTimeStyles.AllowWhiteSpaces | DateTimeStyles.AssumeLocal,
+                                                      out dateFin))
+                        {
+                            Console.WriteLine($"Date fin invalide : {row[2]}");
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine($"Date fin invalide : {row[2]}");
+                    }
+
+                    // Ici, row[0] contient désormais le nom du personnel.
+                    absences.Add(new object[] { row[0], dateDebut, dateFin, row[3] });
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Erreur inattendue lors du traitement des dates : {ex.Message}");
                 }
             }
 
-            command.Prepare();
-            result = command.ExecuteScalar();
-            return result;
+            return absences;
         }
     }
 }

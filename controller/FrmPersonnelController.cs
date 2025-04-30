@@ -16,9 +16,10 @@ namespace Kanban.controller
         /// Récupère la liste de tous les personnels depuis la base de données.
         /// </summary>
         /// <returns>Liste des informations des personnels.</returns>
-        public static List<object[]> GetAllPersonnels()
+        public static List<Kanban.model.Personnel> GetAllPersonnels()
         {
             return PersonnelAccess.GetAllPersonnels();
         }
+
     }
 }

@@ -1,4 +1,5 @@
 ﻿using Kanban.bddmanager;
+using Kanban.model;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -30,46 +31,78 @@ namespace Kanban.dal
         /// Récupère la liste de tous les personnels enregistrés dans la base de données.
         /// </summary>
         /// <returns>Une liste d'objets contenant les informations des personnels.</returns>
-        public static List<object[]> GetAllPersonnels()
+        public static List<Kanban.model.Personnel> GetAllPersonnels()
         {
             string query = "SELECT idpersonnel, nom, prenom, tel, mail, idservice FROM personnel";
-            return BddManager.GetInstance(connectionString).ReqSelect(query);
+            List<object[]> rows = BddManager.GetInstance().ReqSelect(query);
+
+            List<Kanban.model.Personnel> personnels = new List<Kanban.model.Personnel>();
+
+            foreach (object[] row in rows)
+            {
+                Kanban.model.Personnel p = new Kanban.model.Personnel
+                {
+                    idpersonnel = Convert.ToInt32(row[0]),
+                    nom = Convert.ToString(row[1]),
+                    prenom = Convert.ToString(row[2]),
+                    tel = Convert.ToString(row[3]),
+                    mail = Convert.ToString(row[4]),
+                    idservice = Convert.ToInt32(row[5])
+                };
+
+                personnels.Add(p);
+            }
+
+            return personnels;
         }
 
         /// <summary>
-        /// Ajoute un nouveau personnel dans la base de données.
+        /// Ajoute un Personnel dans la base de donnée.
         /// </summary>
-        /// <param name="nom">Nom du personnel.</param>
-        /// <param name="prenom">Prénom du personnel.</param>
-        /// <param name="tel">Téléphone du personnel.</param>
-        /// <param name="email">Email du personnel.</param>
-        /// <param name="idService">Identifiant du service du personnel.</param>
-        public static void AddPersonnel(string nom, string prenom, string tel, string email, int idService)
+        public static void AddPersonnel(string nom, string prenom, string tel, string mail)
         {
-            string query = "INSERT INTO personnel (nom, prenom, tel, email, idService) VALUES (@nom, @prenom, @tel, @email, @idService)";
-            Dictionary<string, object> parameters = new Dictionary<string, object>
+            try
             {
-                {"@nom", nom},
-                {"@prenom", prenom},
-                {"@tel", tel},
-                {"@email", email},
-                {"@idService", idService}
-            };
-            BddManager.GetInstance(connectionString).ReqUpdate(query, parameters);
-        }
+                // Chaîne de connexion à la base de données
+                string connectionString = "server=localhost;userid=Mediatek86_Admin;password=GEd(E[*-zmK9w6W7;database=mediatek86_db";
 
-        /// <summary>
-        /// Supprime un personnel de la base de données.
-        /// </summary>
-        /// <param name="id">Identifiant unique du personnel.</param>
-        public static void DeletePersonnel(int id)
-        {
-            string query = "DELETE FROM personnel WHERE id = @id";
-            Dictionary<string, object> parameters = new Dictionary<string, object>
+                // Récupérer le dernier idService
+                int newIdService;
+                string queryGetLastId = "SELECT MAX(idService) FROM personnel";
+
+                using (var connection = new MySql.Data.MySqlClient.MySqlConnection(connectionString))
+                {
+                    connection.Open();
+                    using (var command = new MySql.Data.MySqlClient.MySqlCommand(queryGetLastId, connection))
+                    {
+                        object result = command.ExecuteScalar();
+                        newIdService = (result == DBNull.Value) ? 1 : Convert.ToInt32(result) + 1; // Si aucun ID, commence à 1
+                    }
+                }
+
+                // Ajouter le nouveau personnel
+                string queryInsert = "INSERT INTO personnel (nom, prenom, tel, mail, idService) VALUES (@nom, @prenom, @tel, @mail, @idService)";
+                using (var connection = new MySql.Data.MySqlClient.MySqlConnection(connectionString))
+                {
+                    connection.Open();
+                    using (var command = new MySql.Data.MySqlClient.MySqlCommand(queryInsert, connection))
+                    {
+                        // Ajouter les paramètres nécessaires
+                        command.Parameters.AddWithValue("@nom", nom);
+                        command.Parameters.AddWithValue("@prenom", prenom);
+                        command.Parameters.AddWithValue("@tel", tel);
+                        command.Parameters.AddWithValue("@mail", mail);
+                        command.Parameters.AddWithValue("@idService", newIdService);
+
+                        // Exécuter l'insertion
+                        command.ExecuteNonQuery();
+                    }
+                }
+            }
+            catch (Exception ex)
             {
-                {"@id", id}
-            };
-            BddManager.GetInstance(connectionString).ReqUpdate(query, parameters);
+                throw new Exception($"Erreur lors de l'ajout du personnel : {ex.Message}");
+            }
         }
     }
 }

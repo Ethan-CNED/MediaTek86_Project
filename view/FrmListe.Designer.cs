@@ -2,6 +2,12 @@
 using System.Windows.Forms;
 using Kanban.controller;
 using Kanban.dal;
+using System.Globalization;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text.RegularExpressions;
+using System.Diagnostics;
+using Kanban.model;
 
 namespace Kanban.view
 {
@@ -53,15 +59,21 @@ namespace Kanban.view
             this.SuspendLayout();
             // 
             // dataGridView_Personnel
-            // 
+            //
+            dataGridView_Personnel.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
             this.dataGridView_Personnel.AllowUserToAddRows = false;
             this.dataGridView_Personnel.Location = new System.Drawing.Point(6, 6);
             this.dataGridView_Personnel.Name = "dataGridView_Personnel";
             this.dataGridView_Personnel.Size = new System.Drawing.Size(840, 408);
             this.dataGridView_Personnel.TabIndex = 0;
+            dataGridView_Personnel.AutoGenerateColumns = false; 
+
+
             // 
             // dataGridView_Absence
             // 
+            dataGridView_Absence.DataSource = null;
+            dataGridView_Absence.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
             this.dataGridView_Absence.AllowUserToAddRows = false;
             this.dataGridView_Absence.Location = new System.Drawing.Point(6, 6);
             this.dataGridView_Absence.Name = "dataGridView_Absence";
@@ -124,6 +136,7 @@ namespace Kanban.view
             this.button_Abs_Ajoutez.Size = new System.Drawing.Size(97, 31);
             this.button_Abs_Ajoutez.TabIndex = 1;
             this.button_Abs_Ajoutez.Text = "Ajoutez";
+            this.button_Abs_Ajoutez.Click += new System.EventHandler(this.button_Abs_Ajoutez_Click);
             // 
             // button_Abs_Modifier
             // 
@@ -155,58 +168,138 @@ namespace Kanban.view
         /// </summary>
         private void ConfigureDataGridViews()
         {
-            // Configuration des colonnes pour dataGridView_Personnel
             dataGridView_Personnel.Columns.Clear();
-            dataGridView_Personnel.Columns.Add("id", "ID");
-            dataGridView_Personnel.Columns.Add("nom", "Nom");
-            dataGridView_Personnel.Columns.Add("prenom", "Prénom");
-            dataGridView_Personnel.Columns.Add("tel", "Téléphone");
-            dataGridView_Personnel.Columns.Add("email", "Email");
-            dataGridView_Personnel.Columns.Add("idService", "Service");
 
-            // Configuration des colonnes pour dataGridView_Absence
-            dataGridView_Absence.Columns.Clear();
+            dataGridView_Personnel.Columns.Add("id", "ID");
+            dataGridView_Personnel.Columns["id"].DataPropertyName = "idpersonnel";
+
+            dataGridView_Personnel.Columns.Add("nom", "Nom");
+            dataGridView_Personnel.Columns["nom"].DataPropertyName = "nom";
+
+            dataGridView_Personnel.Columns.Add("prenom", "Prénom");
+            dataGridView_Personnel.Columns["prenom"].DataPropertyName = "prenom";
+
+            dataGridView_Personnel.Columns.Add("tel", "Téléphone");
+            dataGridView_Personnel.Columns["tel"].DataPropertyName = "tel";
+
+            dataGridView_Personnel.Columns.Add("email", "Email");
+            dataGridView_Personnel.Columns["email"].DataPropertyName = "mail";
+
+            dataGridView_Personnel.Columns.Add("idService", "Service");
+            dataGridView_Personnel.Columns["idService"].DataPropertyName = "idservice";
+
             dataGridView_Absence.Columns.Add("idPersonnel", "Personnel");
+            dataGridView_Absence.Columns["idPersonnel"].DataPropertyName = "idPersonnel";
+
             dataGridView_Absence.Columns.Add("dateDebut", "Date Début");
+            dataGridView_Absence.Columns["dateDebut"].DataPropertyName = "dateDebut";
+
             dataGridView_Absence.Columns.Add("dateFin", "Date Fin");
+            dataGridView_Absence.Columns["dateFin"].DataPropertyName = "dateFin";
+
             dataGridView_Absence.Columns.Add("idMotif", "Motif");
+            dataGridView_Absence.Columns["idMotif"].DataPropertyName = "idMotif";
         }
+
 
         /// <summary>
         /// Charge les données des personnels dans le DataGridView_Personnel.
+        /// </summary>
+        /// <summary>
+        /// Charge et affiche la liste des personnels dans le DataGridView correspondant.
         /// </summary>
         private void LoadPersonnels()
         {
             try
             {
-                var personnels = FrmPersonnelController.GetAllPersonnels();
-                foreach (var personnel in personnels)
+                // Récupérer les personnels depuis la base de données
+                var personnels = PersonnelAccess.GetAllPersonnels();
+
+                // Vérifier que des personnels ont été retournés
+                if (personnels != null && personnels.Count > 0)
                 {
-                    dataGridView_Personnel.Rows.Add(personnel);
+                    // Au lieu de vider et ajouter manuellement les lignes,
+                    // affectez directement la source de données
+                    dataGridView_Personnel.DataSource = personnels;
+                }
+                else
+                {
+                    MessageBox.Show("Aucun personnel trouvé.", "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Erreur lors du chargement des personnels : {ex.Message}");
+                MessageBox.Show($"Erreur lors du chargement des personnels : {ex.Message}", "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
+
         /// <summary>
-        /// Charge les données des absences dans le DataGridView_Absence.
+        /// Charge et affiche la liste des absences dans le DataGridView correspondant.
         /// </summary>
-        private void LoadAbsences()
+
+        public void LoadAbsences()
         {
             try
             {
-                var absences = FrmAbsenceController.GetAllAbsences();
-                foreach (var absence in absences)
+                var absences = AbsenceAccess.GetAllAbsences();
+
+                // Dictionnaire de correspondance pour les motifs connus
+                Dictionary<int, string> motifNames = new Dictionary<int, string>
+        {
+            { 1, "Congé" },
+            { 2, "Maladie" },
+            { 3, "Retard" },
+            { 4, "Autre" }
+        };
+
+                // Nettoyer le DataGridView pour éviter l'accumulation de lignes
+                dataGridView_Absence.AutoGenerateColumns = true;
+                dataGridView_Absence.DataSource = null;
+                dataGridView_Absence.Rows.Clear();
+                dataGridView_Absence.Columns.Clear();
+
+                if (absences != null && absences.Count > 0)
                 {
-                    dataGridView_Absence.Rows.Add(absence);
+                    var data = absences.Select(a =>
+                    {
+                        // a[0] : maintenant le nom du personnel,
+                        // a[1] : Date de début (DateTime),
+                        // a[2] : Date de fin (DateTime),
+                        // a[3] : ID du motif
+
+                        DateTime dtDebut = (DateTime)a[1];
+                        DateTime dtFin = (DateTime)a[2];
+
+                        // Formatage pour afficher en "jour/mois/année HH:mm:ss"
+                        string displayDateDebut = dtDebut == DateTime.MinValue ? "Non renseignée" : dtDebut.ToString("dd/MM/yyyy HH:mm:ss");
+                        string displayDateFin = dtFin == DateTime.MinValue ? "Non renseignée" : dtFin.ToString("dd/MM/yyyy HH:mm:ss");
+
+                        // Remplacement du motif numérique par son libellé
+                        int motifId = Convert.ToInt32(a[3]);
+                        string motifString = motifId == 0
+                                                ? "Aucun motif"
+                                                : motifNames.ContainsKey(motifId) ? motifNames[motifId] : "Inconnu";
+
+                        return new
+                        {
+                            Personnel = a[0],         // Affichera le nom du personnel
+                            DateDebut = displayDateDebut,
+                            DateFin = displayDateFin,
+                            Motif = motifString       // Affichera le libellé du motif
+                        };
+                    }).ToList();
+
+                    dataGridView_Absence.DataSource = data;
+                }
+                else
+                {
+                    MessageBox.Show("Aucune absence trouvée.", "Information", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Erreur lors du chargement des absences : {ex.Message}");
+                MessageBox.Show($"Erreur lors du chargement des absences : {ex.Message}", "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
     }
