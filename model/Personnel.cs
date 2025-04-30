@@ -17,6 +17,11 @@ namespace Kanban.model
         public int Id { get; set; }
         public string Nom { get; set; }
 
+        public string NomComplet
+        {
+            get { return $"{prenom} {nom}"; }
+        }
+
         public override string ToString()
         {
             return $"{nom} {prenom}";  // Affiche "Nom Prénom"

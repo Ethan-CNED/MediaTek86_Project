@@ -1,7 +1,11 @@
-﻿using MySql.Data.MySqlClient;
+﻿using Kanban.model;
+using MySql.Data.MySqlClient;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using Kanban.dal;
+using Kanban.model;
+using System.Windows.Forms;
 
 namespace Kanban.bddmanager
 {
@@ -28,20 +32,26 @@ namespace Kanban.bddmanager
             return instance;
         }
 
-        public void ReqUpdate(string stringQuery, Dictionary<string, object> parameters = null)
+        public int ReqUpdate(string query, Dictionary<string, object> parameters)
         {
-            using (MySqlCommand command = new MySqlCommand(stringQuery, connection))
+            int rowsAffected = 0;
+            using (var connection = new MySqlConnection(stringConnect))
             {
-                if (parameters != null)
+                connection.Open();
+                using (var command = new MySqlCommand(query, connection))
                 {
-                    foreach (KeyValuePair<string, object> parameter in parameters)
+                    if (parameters != null)
                     {
-                        command.Parameters.Add(new MySqlParameter(parameter.Key, parameter.Value));
+                        foreach (KeyValuePair<string, object> parameter in parameters)
+                        {
+                            command.Parameters.Add(new MySqlParameter(parameter.Key, parameter.Value));
+                        }
                     }
+                    // Exécuter la requête et récupérer le nombre de lignes affectées :
+                    rowsAffected = command.ExecuteNonQuery();
                 }
-                command.Prepare();
-                command.ExecuteNonQuery();
             }
+            return rowsAffected;
         }
 
         public List<object[]> ReqSelect(string query)
@@ -87,70 +97,94 @@ namespace Kanban.bddmanager
         }
 
         /// <summary>
-        /// Méthode modifiée pour récupérer le nom du personnel via une jointure.
+        /// Récupère la liste des absences en effectuant une jointure pour obtenir le nom du personnel.
         /// </summary>
-        /// <returns>Liste des absences sous forme de tableaux d'objets.</returns>
-        public static List<object[]> GetAllAbsences()
+        /// <returns>List d'objets Absence</returns>
+        public static List<Absence> GetAllAbsences()
         {
-            // Remarquez l'utilisation de backticks pour encapsuler les noms de tables/colonnes.
-            string query = @"
-                SELECT p.nom AS Personnel, a.datedebut, a.datefin, a.idMotif 
-                FROM `absence` a 
-                INNER JOIN `personnel` p ON a.idPersonnel = p.id";
-
-            var results = BddManager.GetInstance().ReqSelect(query);
-            var absences = new List<object[]>();
-
-            // Formats attendus pour la conversion des dates.
-            string[] formats = { "yyyy-MM-dd HH:mm:ss", "MM/dd/yyyy HH:mm:ss", "dd/MM/yyyy HH:mm:ss" };
-
-            foreach (var row in results)
+            try
             {
-                try
+                MessageBox.Show("Point d'arrêt : avant affichage de query");
+                string query = "SELECT mediatek86_db.absence.idpersonnel, mediatek86_db.absence.datedebut, " +
+                               "mediatek86_db.absence.datefin, mediatek86_db.absence.idmotif, mediatek86_db.personnel.nom " +
+                               "FROM mediatek86_db.absence " +
+                               "INNER JOIN mediatek86_db.personnel ON mediatek86_db.absence.idpersonnel = mediatek86_db.personnel.idpersonnel";
+                MessageBox.Show(query);
+
+
+
+                ;
+                List<object[]> rows = BddManager.GetInstance().ReqSelect(query);
+                List<Absence> absences = new List<Absence>();
+
+                // Formats attendus pour la conversion des dates
+                string[] formats = { "yyyy-MM-dd HH:mm:ss", "MM/dd/yyyy HH:mm:ss", "dd/MM/yyyy HH:mm:ss" };
+
+                foreach (var row in rows)
                 {
                     DateTime dateDebut = DateTime.MinValue;
                     DateTime dateFin = DateTime.MinValue;
 
+                    // Conversion de la colonne 'datedebut' (index 1)
                     if (row[1] != DBNull.Value)
                     {
                         string dateDebutStr = row[1].ToString();
-                        if (!DateTime.TryParseExact(dateDebutStr, formats, CultureInfo.InvariantCulture,
-                                                      DateTimeStyles.AllowWhiteSpaces | DateTimeStyles.AssumeLocal,
-                                                      out dateDebut))
+                        if (!DateTime.TryParseExact(
+                                dateDebutStr,
+                                formats,
+                                CultureInfo.InvariantCulture,
+                                DateTimeStyles.AllowWhiteSpaces | DateTimeStyles.AssumeLocal,
+                                out dateDebut))
                         {
                             Console.WriteLine($"Date début invalide : {row[1]}");
                         }
                     }
                     else
                     {
-                        Console.WriteLine($"Date début invalide : {row[1]}");
+                        Console.WriteLine("Date début invalide (null)");
                     }
 
+                    // Conversion de la colonne 'datefin' (index 2)
                     if (row[2] != DBNull.Value)
                     {
                         string dateFinStr = row[2].ToString();
-                        if (!DateTime.TryParseExact(dateFinStr, formats, CultureInfo.InvariantCulture,
-                                                      DateTimeStyles.AllowWhiteSpaces | DateTimeStyles.AssumeLocal,
-                                                      out dateFin))
+                        if (!DateTime.TryParseExact(
+                                dateFinStr,
+                                formats,
+                                CultureInfo.InvariantCulture,
+                                DateTimeStyles.AllowWhiteSpaces | DateTimeStyles.AssumeLocal,
+                                out dateFin))
                         {
                             Console.WriteLine($"Date fin invalide : {row[2]}");
                         }
                     }
                     else
                     {
-                        Console.WriteLine($"Date fin invalide : {row[2]}");
+                        Console.WriteLine("Date fin invalide (null)");
                     }
 
-                    // Ici, row[0] contient désormais le nom du personnel.
-                    absences.Add(new object[] { row[0], dateDebut, dateFin, row[3] });
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Erreur inattendue lors du traitement des dates : {ex.Message}");
-                }
-            }
+                    // Création d'un objet Absence
+                    Absence absence = new Absence
+                    {
+                        PersonnelName = row[0]?.ToString(),
+                        dateDebut = dateDebut,
+                        dateFin = dateFin,
+                        idMotif = Convert.ToInt32(row[3]),
+                        // Stockage des valeurs d'origine pour servir de clé composite lors de l'update
+                        OriginalDateDebut = dateDebut,
+                        OriginalDateFin = dateFin
+                    };
 
-            return absences;
+                    absences.Add(absence);
+                }
+
+                return absences;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Erreur lors de la récupération des absences : {ex.Message}");
+                return new List<Absence>(); // Retourne une liste vide en cas d'erreur
+            }
         }
     }
 }

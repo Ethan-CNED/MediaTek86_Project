@@ -17,25 +17,35 @@ namespace Kanban.controller
         /// <returns>Liste des informations des absences.</returns>
         public static List<Absence> GetAllAbsences()
         {
-            string query = "SELECT idPersonnel, dateDebut, dateFin, idMotif FROM absence";
-            List<object[]> rows = BddManager.GetInstance().ReqSelect(query);
-
-            List<Absence> absences = new List<Absence>();
-
-            foreach (object[] row in rows)
+            try
             {
-                Absence a = new Absence
+                // Requête SQL pour récupérer les données des absences
+                string query = "SELECT idpersonnel, datedebut, datefin, idmotif FROM absence";
+                List<object[]> rows = BddManager.GetInstance().ReqSelect(query);
+
+                List<Absence> absences = new List<Absence>();
+
+                foreach (object[] row in rows)
                 {
-                    idPersonnel = Convert.ToInt32(row[0]),
-                    dateDebut = Convert.ToDateTime(row[1]),
-                    dateFin = Convert.ToDateTime(row[2]),
-                    idMotif = Convert.ToInt32(row[3])
-                };
+                    // Utilisez les indices pour accéder aux colonnes
+                    Absence absence = new Absence
+                    {
+                        idPersonnel = Convert.ToInt32(row[0]), // ID du personnel (première colonne)
+                        dateDebut = DateTime.TryParse(row[1]?.ToString(), out var debut) ? debut : DateTime.MinValue, // Date de début
+                        dateFin = DateTime.TryParse(row[2]?.ToString(), out var fin) ? fin : DateTime.MinValue,       // Date de fin
+                        idMotif = Convert.ToInt32(row[3])    // ID du motif (quatrième colonne)
+                    };
 
-                absences.Add(a);
+                    absences.Add(absence);
+                }
+
+                return absences;
             }
-
-            return absences;
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Erreur lors de la récupération des absences : {ex.Message}");
+                return new List<Absence>(); // Retourne une liste vide en cas d'erreur
+            }
         }
     }
 }

@@ -84,6 +84,7 @@
             this.dateTimePicker_Ajout_Fin.Name = "dateTimePicker_Ajout_Fin";
             this.dateTimePicker_Ajout_Fin.Size = new System.Drawing.Size(291, 20);
             this.dateTimePicker_Ajout_Fin.TabIndex = 12;
+
             // 
             // dateTimePicker_Ajout_Début
             // 
@@ -93,6 +94,7 @@
             this.dateTimePicker_Ajout_Début.Name = "dateTimePicker_Ajout_Début";
             this.dateTimePicker_Ajout_Début.Size = new System.Drawing.Size(291, 20);
             this.dateTimePicker_Ajout_Début.TabIndex = 11;
+
             // 
             // comboBox_Motif
             // 
@@ -120,7 +122,7 @@
             this.btn_Perso_Valider.TabIndex = 8;
             this.btn_Perso_Valider.Text = "Ok";
             this.btn_Perso_Valider.UseVisualStyleBackColor = true;
-            this.btn_Perso_Valider.Click += new System.EventHandler(this.btn_Perso_Valider_Click);
+            this.btn_Perso_Valider.Click += new System.EventHandler(this.btn_Abs_Valider_Click);
             // 
             // label3
             // 

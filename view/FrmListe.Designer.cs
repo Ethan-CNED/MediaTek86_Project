@@ -59,22 +59,18 @@ namespace Kanban.view
             this.SuspendLayout();
             // 
             // dataGridView_Personnel
-            //
-            dataGridView_Personnel.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
+            // 
             this.dataGridView_Personnel.AllowUserToAddRows = false;
+            this.dataGridView_Personnel.AutoSizeColumnsMode = System.Windows.Forms.DataGridViewAutoSizeColumnsMode.Fill;
             this.dataGridView_Personnel.Location = new System.Drawing.Point(6, 6);
             this.dataGridView_Personnel.Name = "dataGridView_Personnel";
             this.dataGridView_Personnel.Size = new System.Drawing.Size(840, 408);
             this.dataGridView_Personnel.TabIndex = 0;
-            dataGridView_Personnel.AutoGenerateColumns = false; 
-
-
             // 
             // dataGridView_Absence
             // 
-            dataGridView_Absence.DataSource = null;
-            dataGridView_Absence.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
             this.dataGridView_Absence.AllowUserToAddRows = false;
+            this.dataGridView_Absence.AutoSizeColumnsMode = System.Windows.Forms.DataGridViewAutoSizeColumnsMode.Fill;
             this.dataGridView_Absence.Location = new System.Drawing.Point(6, 6);
             this.dataGridView_Absence.Name = "dataGridView_Absence";
             this.dataGridView_Absence.Size = new System.Drawing.Size(840, 408);
@@ -117,6 +113,7 @@ namespace Kanban.view
             this.btn_Perso_Modifier.Size = new System.Drawing.Size(97, 31);
             this.btn_Perso_Modifier.TabIndex = 2;
             this.btn_Perso_Modifier.Text = "Modifier";
+            this.btn_Perso_Modifier.Click += new System.EventHandler(this.btn_Perso_Modifier_Click);
             // 
             // tabPage2
             // 
@@ -145,6 +142,7 @@ namespace Kanban.view
             this.button_Abs_Modifier.Size = new System.Drawing.Size(97, 31);
             this.button_Abs_Modifier.TabIndex = 2;
             this.button_Abs_Modifier.Text = "Modifier";
+            this.button_Abs_Modifier.Click += new System.EventHandler(this.btn_Abs_Modifier_Click);
             // 
             // FrmListe
             // 
@@ -212,14 +210,52 @@ namespace Kanban.view
         {
             try
             {
-                // Récupérer les personnels depuis la base de données
                 var personnels = PersonnelAccess.GetAllPersonnels();
 
-                // Vérifier que des personnels ont été retournés
+                dataGridView_Personnel.DataSource = null; // Réinitialiser la source
+                dataGridView_Personnel.Columns.Clear();  // Supprimer toutes les colonnes existantes
+                dataGridView_Personnel.AutoGenerateColumns = false; // Désactiver la génération automatique
+
                 if (personnels != null && personnels.Count > 0)
                 {
-                    // Au lieu de vider et ajouter manuellement les lignes,
-                    // affectez directement la source de données
+                    // Ajouter les colonnes avec les bons DataPropertyName
+                    dataGridView_Personnel.Columns.Add(new DataGridViewTextBoxColumn
+                    {
+                        DataPropertyName = "idpersonnel", // Correspond à la propriété dans la classe Personnel
+                        HeaderText = "ID"
+                    });
+
+                    dataGridView_Personnel.Columns.Add(new DataGridViewTextBoxColumn
+                    {
+                        DataPropertyName = "nom", // Correspond à la propriété dans la classe Personnel
+                        HeaderText = "Nom"
+                    });
+
+                    dataGridView_Personnel.Columns.Add(new DataGridViewTextBoxColumn
+                    {
+                        DataPropertyName = "prenom", // Correspond à la propriété dans la classe Personnel
+                        HeaderText = "Prénom"
+                    });
+
+                    dataGridView_Personnel.Columns.Add(new DataGridViewTextBoxColumn
+                    {
+                        DataPropertyName = "tel", // Correspond à la propriété dans la classe Personnel
+                        HeaderText = "Téléphone"
+                    });
+
+                    dataGridView_Personnel.Columns.Add(new DataGridViewTextBoxColumn
+                    {
+                        DataPropertyName = "mail", // Correspond à la propriété dans la classe Personnel
+                        HeaderText = "Email"
+                    });
+
+                    dataGridView_Personnel.Columns.Add(new DataGridViewTextBoxColumn
+                    {
+                        DataPropertyName = "idservice", // Correspond à la propriété dans la classe Personnel
+                        HeaderText = "Service"
+                    });
+
+                    // Lier les données
                     dataGridView_Personnel.DataSource = personnels;
                 }
                 else
@@ -233,6 +269,18 @@ namespace Kanban.view
             }
         }
 
+        private string GetPersonnelNameById(int idPersonnel)
+        {
+            var personnels = PersonnelAccess.GetAllPersonnels();
+            var personnel = personnels.FirstOrDefault(p => p.idpersonnel == idPersonnel); 
+            if (personnel != null)
+            {
+                return $"{personnel.prenom} {personnel.nom}";
+            }
+            return "Inconnu";
+        }
+
+
 
         /// <summary>
         /// Charge et affiche la liste des absences dans le DataGridView correspondant.
@@ -242,55 +290,45 @@ namespace Kanban.view
         {
             try
             {
+                // Récupérer directement la liste d'Absence depuis la couche d'accès aux données
                 var absences = AbsenceAccess.GetAllAbsences();
 
-                // Dictionnaire de correspondance pour les motifs connus
-                Dictionary<int, string> motifNames = new Dictionary<int, string>
-        {
-            { 1, "Congé" },
-            { 2, "Maladie" },
-            { 3, "Retard" },
-            { 4, "Autre" }
-        };
-
-                // Nettoyer le DataGridView pour éviter l'accumulation de lignes
-                dataGridView_Absence.AutoGenerateColumns = true;
+                // Réinitialisation du DataGridView
+                dataGridView_Absence.AutoGenerateColumns = false; 
                 dataGridView_Absence.DataSource = null;
                 dataGridView_Absence.Rows.Clear();
                 dataGridView_Absence.Columns.Clear();
 
+                // Configuration manuelle des colonnes du DataGridView
+                dataGridView_Absence.Columns.Add(new DataGridViewTextBoxColumn
+                {
+                    Name = "Personnel",
+                    HeaderText = "Personnel",
+                    DataPropertyName = "PersonnelName"  // Propriété de l'objet Absence
+                });
+                dataGridView_Absence.Columns.Add(new DataGridViewTextBoxColumn
+                {
+                    Name = "DateDebut",
+                    HeaderText = "Date Début",
+                    DataPropertyName = "DisplayDateDebut" // Propriété calculée pour l'affichage
+                });
+                dataGridView_Absence.Columns.Add(new DataGridViewTextBoxColumn
+                {
+                    Name = "DateFin",
+                    HeaderText = "Date Fin",
+                    DataPropertyName = "DisplayDateFin"   // Propriété calculée pour l'affichage
+                });
+                dataGridView_Absence.Columns.Add(new DataGridViewTextBoxColumn
+                {
+                    Name = "Motif",
+                    HeaderText = "Motif",
+                    DataPropertyName = "MotifName"
+                });
+
+                // Si la liste contient des données, on lie la DataSource à la liste des absences
                 if (absences != null && absences.Count > 0)
                 {
-                    var data = absences.Select(a =>
-                    {
-                        // a[0] : maintenant le nom du personnel,
-                        // a[1] : Date de début (DateTime),
-                        // a[2] : Date de fin (DateTime),
-                        // a[3] : ID du motif
-
-                        DateTime dtDebut = (DateTime)a[1];
-                        DateTime dtFin = (DateTime)a[2];
-
-                        // Formatage pour afficher en "jour/mois/année HH:mm:ss"
-                        string displayDateDebut = dtDebut == DateTime.MinValue ? "Non renseignée" : dtDebut.ToString("dd/MM/yyyy HH:mm:ss");
-                        string displayDateFin = dtFin == DateTime.MinValue ? "Non renseignée" : dtFin.ToString("dd/MM/yyyy HH:mm:ss");
-
-                        // Remplacement du motif numérique par son libellé
-                        int motifId = Convert.ToInt32(a[3]);
-                        string motifString = motifId == 0
-                                                ? "Aucun motif"
-                                                : motifNames.ContainsKey(motifId) ? motifNames[motifId] : "Inconnu";
-
-                        return new
-                        {
-                            Personnel = a[0],         // Affichera le nom du personnel
-                            DateDebut = displayDateDebut,
-                            DateFin = displayDateFin,
-                            Motif = motifString       // Affichera le libellé du motif
-                        };
-                    }).ToList();
-
-                    dataGridView_Absence.DataSource = data;
+                    dataGridView_Absence.DataSource = absences;
                 }
                 else
                 {

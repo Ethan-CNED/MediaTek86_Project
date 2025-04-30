@@ -104,5 +104,38 @@ namespace Kanban.dal
                 throw new Exception($"Erreur lors de l'ajout du personnel : {ex.Message}");
             }
         }
+
+        /// <summary>
+        /// Met à jour les informations d'un personnel dans la base de données.
+        /// </summary>
+        /// <param name="idPersonnel">L'identifiant unique du personnel à modifier.</param>
+        /// <param name="nom">Le nouveau nom du personnel.</param>
+        /// <param name="prenom">Le nouveau prénom du personnel.</param>
+        /// <param name="tel">Le nouveau numéro de téléphone du personnel.</param>
+        /// <param name="mail">La nouvelle adresse email du personnel.</param>
+        public static void UpdatePersonnel(int idPersonnel, string nom, string prenom, string tel, string mail)
+        {
+            // Vérifier les paramètres requis
+            if (idPersonnel <= 0) throw new ArgumentException("L'identifiant du personnel est invalide.");
+            if (string.IsNullOrWhiteSpace(nom)) throw new ArgumentException("Le nom est requis.");
+            if (string.IsNullOrWhiteSpace(prenom)) throw new ArgumentException("Le prénom est requis.");
+
+            // Construire la requête SQL pour mettre à jour le personnel
+            string query = "UPDATE personnel SET nom = @nom, prenom = @prenom, tel = @tel, mail = @mail WHERE idpersonnel = @idPersonnel";
+
+            // Préparer les paramètres pour la requête
+            var parameters = new Dictionary<string, object>
+            {
+                { "@idPersonnel", idPersonnel },
+                { "@nom", nom },
+                { "@prenom", prenom },
+                { "@tel", tel },
+                { "@mail", mail }
+            };
+
+            // Exécuter la requête
+            BddManager.GetInstance().ReqUpdate(query, parameters);
+        }
     }
 }
+

@@ -1,25 +1,55 @@
 ﻿using Kanban.dal;
+using Kanban.model;
 using System;
 using System.Windows.Forms;
 
 namespace Kanban.view
 {
     /// <summary>
-    /// Formulaire pour ajouter un nouveau personnel.
+    /// Mode du formulaire : Ajout ou Modification.
+    /// </summary>
+    public enum FormMode { Ajout, Modification }
+
+    /// <summary>
+    /// Formulaire pour ajouter ou modifier un personnel.
     /// </summary>
     public partial class FrmAjoutPersonnel : Form
     {
+        private FormMode currentMode;          // Mode du formulaire (Ajout ou Modification)
+        private Personnel personnel;          // Instance du personnel pour modification
+
         /// <summary>
-        /// Initialise une nouvelle instance du formulaire d'ajout de personnel.
+        /// Constructeur pour le mode Ajout.
         /// </summary>
         public FrmAjoutPersonnel()
         {
             InitializeComponent();
+            currentMode = FormMode.Ajout;      // Par défaut, en mode Ajout
+        }
+
+        /// <summary>
+        /// Constructeur pour le mode Modification.
+        /// </summary>
+        /// <param name="personnel">Instance du personnel à modifier.</param>
+        public FrmAjoutPersonnel(Personnel personnel) : this()
+        {
+            currentMode = FormMode.Modification;
+            this.personnel = personnel;
+
+            // Pré-remplir les champs avec les informations du personnel existant
+            if (personnel != null)
+            {
+                textBox_Nom.Text = personnel.nom;
+                textBox_Prenom.Text = personnel.prenom;
+                textBox_Tel.Text = personnel.tel;
+                textBox_Mail.Text = personnel.mail;
+                btn_Perso_Valider.Text = "Modifier"; // Adapter le texte du bouton
+            }
         }
 
         /// <summary>
         /// Événement déclenché lorsque le bouton "Valider" est cliqué.
-        /// Ajoute un nouveau personnel dans la base de données.
+        /// Ajoute ou modifie un personnel dans la base de données.
         /// </summary>
         private void btn_Perso_Valider_Click(object sender, EventArgs e)
         {
@@ -39,17 +69,26 @@ namespace Kanban.view
                     return;
                 }
 
-                // Appelle la méthode pour ajouter le personnel dans la base
-                PersonnelAccess.AddPersonnel(nom, prenom, tel, mail);
+                if (currentMode == FormMode.Ajout)
+                {
+                    // Mode Ajout : Ajouter un nouveau personnel
+                    PersonnelAccess.AddPersonnel(nom, prenom, tel, mail);
+                    MessageBox.Show("Personnel ajouté avec succès !", "Succès", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                else if (currentMode == FormMode.Modification && personnel != null)
+                {
+                    // Mode Modification : Mettre à jour le personnel existant
+                    PersonnelAccess.UpdatePersonnel(personnel.idpersonnel, nom, prenom, tel, mail);
+                    MessageBox.Show("Personnel modifié avec succès !", "Succès", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
 
-                // Confirmation
-                MessageBox.Show("Personnel ajouté avec succès !", "Succès", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                this.Close(); // Ferme le formulaire après succès
+                // Fermer le formulaire après succès
+                this.Close();
             }
             catch (Exception ex)
             {
                 // Gestion des erreurs
-                MessageBox.Show($"Erreur lors de l'ajout du personnel : {ex.Message}", "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show($"Erreur lors de l'opération : {ex.Message}", "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
@@ -65,11 +104,6 @@ namespace Kanban.view
             {
                 this.Close(); // Ferme le formulaire
             }
-        }
-
-        private void btn_Perso_Annuler_Click_1(object sender, EventArgs e)
-        {
-            this.Close();
         }
     }
 }

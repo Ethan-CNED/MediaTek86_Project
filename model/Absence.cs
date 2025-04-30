@@ -12,11 +12,19 @@ namespace Kanban.model
         public DateTime dateDebut { get; set; }
         public DateTime dateFin { get; set; }
         public int idMotif { get; set; }
+        public string PersonnelName { get; set; }
 
-        // Vous pouvez ajouter une méthode ToString() si besoin pour l'affichage dans un ComboBox, par exemple.
+        public string MotifName { get; set; }
+
+        public DateTime OriginalDateDebut { get; set; }
+        public DateTime OriginalDateFin { get; set; }
+
+        public string DisplayDateDebut => dateDebut.ToString("dd/MM/yyyy HH:mm:ss");
+        public string DisplayDateFin => dateFin.ToString("dd/MM/yyyy HH:mm:ss");
+
         public override string ToString()
         {
-            return $"Personnel: {idPersonnel} | Début: {dateDebut} | Fin: {dateFin} | Motif: {idMotif}";
+            return $"{PersonnelName} – {DisplayDateDebut} à {DisplayDateFin} (Motif : {MotifName})";
         }
     }
 }

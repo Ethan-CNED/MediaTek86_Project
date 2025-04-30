@@ -67,7 +67,7 @@
             this.btn_Perso_Annuler.TabIndex = 9;
             this.btn_Perso_Annuler.Text = "Annuler";
             this.btn_Perso_Annuler.UseVisualStyleBackColor = true;
-            this.btn_Perso_Annuler.Click += new System.EventHandler(this.btn_Perso_Annuler_Click_1);
+            this.btn_Perso_Annuler.Click += new System.EventHandler(this.btn_Perso_Annuler_Click);
             // 
             // btn_Perso_Valider
             // 

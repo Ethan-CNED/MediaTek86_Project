@@ -1,4 +1,5 @@
 ﻿using Kanban.dal;
+using Kanban.model;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -82,6 +83,58 @@ namespace Kanban.view
         private void button_Abs_Ajoutez_Click(object sender, EventArgs e)
         {
             GererAjout(tabControl1.SelectedTab);
+        }
+
+
+
+        private void btn_Perso_Modifier_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                // Récupérer le personnel sélectionné dans la DataGridView
+                if (dataGridView_Personnel.SelectedRows.Count == 0)
+                {
+                    MessageBox.Show("Veuillez sélectionner un personnel à modifier.", "Information", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
+                Personnel personnel = (Personnel)dataGridView_Personnel.SelectedRows[0].DataBoundItem;
+
+                // Ouvrir le formulaire de modification
+                FrmAjoutPersonnel frm = new FrmAjoutPersonnel(personnel);
+                frm.ShowDialog();
+
+                // Rafraîchir la liste après modification
+                LoadPersonnels();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Erreur lors de la modification : {ex.Message}", "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void btn_Abs_Modifier_Click(object sender, EventArgs e)
+        {
+            if (dataGridView_Absence.SelectedRows.Count == 0)
+            {
+                MessageBox.Show("Veuillez sélectionner une absence à modifier.", "Information", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            // Déclaration et initialisation de la variable 'absence'
+            Absence absence = dataGridView_Absence.SelectedRows[0].DataBoundItem as Absence;
+
+            if (absence == null)
+            {
+                MessageBox.Show("Impossible de récupérer l'absence sélectionnée.", "Erreur", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            FrmAjoutAbsence frm = new FrmAjoutAbsence(absence);
+            if (frm.ShowDialog() == DialogResult.OK)
+            {
+                LoadAbsences(); 
+            }
         }
     }
 }
